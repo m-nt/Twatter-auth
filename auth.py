@@ -92,6 +92,26 @@ class Token(BaseModel):
     token: str
 
 
+@app.post("/token/checklogin", response_model=ReturnUser)
+async def token_check_login(token: Token = Body()):
+    if token.token is None:
+        raise HTTPException(400, "token should be specified!")
+    try:
+        payload = jwt.decode(token.token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        expire: int = payload.get("exp")
+        if username is None or expire is None:
+            raise HTTPException(401, "Could not validate credentials")
+    except JWTError:
+        raise HTTPException(401, "Could not validate credentials")
+    if expire - time.time() <= 0:
+        raise HTTPException(401, "Could not validate credentials")
+    user_instant = await db["users"].find_one({"username": username})
+    if user_instant is None:
+        raise HTTPException(400, "User not found!")
+    return ReturnUser.parse_obj(user_instant)
+
+
 @app.post("/token/login", response_model=ReturnUser)
 async def token_login(token: Token = Body()):
     if token.token is None:
