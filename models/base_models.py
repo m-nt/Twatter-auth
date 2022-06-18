@@ -59,6 +59,7 @@ class LoginUser(BaseModel):
 
 
 class ReturnUser(BaseModel):
+    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     username: str
     email: Union[EmailStr, None] = None
     full_name: Union[str, None] = None
